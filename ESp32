@@ -1,0 +1,139 @@
+#include <WiFi.h>
+#include <FirebaseESP32.h>
+#include <DHT.h>
+#include <SPI.h>
+#include <MFRC522.h>
+
+// Wi-Fi credentials    
+#define WIFI_SSID "Meghana"
+#define WIFI_PASSWORD "gottilla"
+
+// Firebase credentials
+#define API_KEY ""
+#define DATABASE_URL ""
+
+// DHT sensor setup
+#define DHTPIN 4
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
+// RFID setup (SPI pins fixed, SS pin and RST pin can be changed)
+#define SS_PIN 5
+#define RST_PIN 22
+MFRC522 rfid(SS_PIN, RST_PIN);
+
+// Firebase objects
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+
+String lastUID = "";  // To store last read RFID UID
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+
+  SPI.begin();      // Init SPI bus for RFID
+  rfid.PCD_Init();  // Init MFRC522
+
+  // Connect to Wi-Fi
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(300);
+  }
+  Serial.println("\n✅ Connected to Wi-Fi");
+
+  // Firebase setup
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+
+  Serial.println("Signing up anonymously...");
+  if (Firebase.signUp(&config, &auth, "", "")) {
+    Serial.println("✅ Anonymous sign-up successful!");
+  } else {
+    Serial.println("❌ Anonymous sign-up failed: " + fbdo.errorReason());
+  }
+
+  Serial.print("Waiting for Firebase to be ready");
+  unsigned long startTime = millis();
+  while (!Firebase.ready()) {
+    Serial.print(".");
+    delay(500);
+    if (millis() - startTime > 10000) {
+      Serial.println("\n❌ Timeout waiting for Firebase!");
+      Serial.println("Error: " + fbdo.errorReason());
+      break;
+    }
+  }
+  if (Firebase.ready()) Serial.println("\n✅ Firebase is ready!");
+
+  randomSeed(analogRead(0));
+}
+
+void loop() {
+  // Read RFID card UID if present
+  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+    String uidString = "";
+    for (byte i = 0; i < rfid.uid.size; i++) {
+      if (rfid.uid.uidByte[i] < 0x10) uidString += "0";  // Leading zero
+      uidString += String(rfid.uid.uidByte[i], HEX);
+    }
+    uidString.toUpperCase();
+
+    if (uidString != lastUID) {  // New card detected
+      lastUID = uidString;
+      Serial.println("RFID Tag UID: " + uidString);
+
+      // Upload UID to Firebase
+      if (Firebase.setString(fbdo, "/health/rfid_uid", uidString)) {
+        Serial.println("✅ RFID UID uploaded: " + uidString);
+      } else {
+        Serial.println("❌ Failed to upload RFID UID: " + fbdo.errorReason());
+      }
+    }
+
+    rfid.PICC_HaltA(); // Stop reading current card
+  }
+
+  // Read DHT sensor
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  if (isnan(temperature) || isnan(humidity)) {
+    Serial.println("❌ Failed to read from DHT sensor!");
+  } else {
+    if (Firebase.setFloat(fbdo, "/health/temperature", temperature)) {
+      Serial.println("✅ Temperature uploaded: " + String(temperature));
+    } else {
+      Serial.println("❌ Failed to upload temperature: " + fbdo.errorReason());
+    }
+
+    if (Firebase.setFloat(fbdo, "/health/humidity", humidity)) {
+      Serial.println("✅ Humidity uploaded: " + String(humidity));
+    } else {
+      Serial.println("❌ Failed to upload humidity: " + fbdo.errorReason());
+    }
+  }
+
+  // Random SpO2 and pulse
+  float SpO2 = random(950, 1001) / 10.0;  // 95.0 to 100.0
+  int pulse = random(60, 101);             // 60 to 100 bpm
+
+  if (Firebase.setFloat(fbdo, "/health/SpO2", SpO2)) {
+    Serial.println("✅ SpO2 uploaded: " + String(SpO2));
+  } else {
+    Serial.println("❌ Failed to upload SpO2: " + fbdo.errorReason());
+  }
+
+  if (Firebase.setInt(fbdo, "/health/pulse", pulse)) {
+    Serial.println("✅ Pulse uploaded: " + String(pulse));
+  } else {
+    Serial.println("❌ Failed to upload pulse: " + fbdo.errorReason());
+  }
+
+  delay(10000);
+}

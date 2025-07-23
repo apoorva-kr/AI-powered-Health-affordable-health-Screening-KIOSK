@@ -1,0 +1,240 @@
+<<<<<<<
+document.addEventListener('DOMContentLoaded', () => {
+  // Simple user registration and login using localStorage
+  const registeredUsersKey = 'registeredUsers';
+  let registeredUsers = JSON.parse(localStorage.getItem(registeredUsersKey) || '{}');
+
+  function saveUsers() {
+    localStorage.setItem(registeredUsersKey, JSON.stringify(registeredUsers));
+  }
+
+  function isUserRegistered(mobile) {
+    return registeredUsers.hasOwnProperty(mobile);
+  }
+
+  function registerUser(mobile) {
+    registeredUsers[mobile] = { mobile };
+    saveUsers();
+  }
+
+  // Screen navigation
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(screen => {
+      screen.classList.remove('active');
+    });
+    const target = document.getElementById(id);
+    if (target) {
+      target.classList.add('active');
+    }
+  }
+
+  // Button event handlers
+
+  // Login screen buttons
+  document.getElementById('send-otp-btn')?.addEventListener('click', () => {
+    const mobile = document.getElementById('mobile-number').value.trim();
+    if (!mobile) {
+      alert('Please enter a mobile number.');
+      return;
+    }
+    if (isUserRegistered(mobile)) {
+      alert('OTP sent to ' + mobile);
+      showScreen('dashboard-screen');
+    } else {
+      alert('Mobile number not registered. Please sign up.');
+    }
+  });
+
+  document.getElementById('scan-rfid-btn')?.addEventListener('click', () => {
+    alert('Simulating RFID scan...');
+    const demoMobile = '1234567890';
+    if (!isUserRegistered(demoMobile)) {
+      registerUser(demoMobile);
+      alert('RFID user registered with mobile ' + demoMobile);
+    }
+    alert('RFID scan successful. Logging in user with mobile ' + demoMobile);
+    showScreen('dashboard-screen');
+  });
+
+  document.getElementById('sign-up-btn')?.addEventListener('click', () => {
+    const mobile = document.getElementById('mobile-number').value.trim();
+    if (!mobile) {
+      alert('Please enter a mobile number to sign up.');
+      return;
+    }
+    if (isUserRegistered(mobile)) {
+      alert('Mobile number already registered. Please login.');
+    } else {
+      registerUser(mobile);
+      alert('Registration successful! Redirecting...');
+      showScreen('dashboard-screen');
+    }
+  });
+
+  // Dashboard buttons
+  document.getElementById('logout-btn')?.addEventListener('click', () => {
+    showScreen('login-screen');
+  });
+
+  document.getElementById('start-health-check-btn')?.addEventListener('click', () => {
+    showScreen('vitals-entry-screen');
+  });
+
+  document.getElementById('view-reports-btn')?.addEventListener('click', () => {
+    showScreen('report-screen');
+  });
+
+  document.getElementById('call-doctor-btn')?.addEventListener('click', () => {
+    showScreen('doctor-consultation-screen');
+  });
+
+  document.getElementById('feedback-btn')?.addEventListener('click', () => {
+    showScreen('feedback-screen');
+  });
+
+  // Vitals entry form submission
+  const vitalsForm = document.getElementById('vitals-form');
+  vitalsForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const temperature = document.getElementById('temperature')?.value;
+    const pulse = document.getElementById('pulse')?.value;
+    const systolic = document.getElementById('systolic')?.value;
+    const diastolic = document.getElementById('diastolic')?.value;
+    const oxygenLevel = document.getElementById('oxygen-level')?.value;
+    alert(`Vitals submitted:\nTemperature: ${temperature}\nPulse: ${pulse}\nSystolic: ${systolic}\nDiastolic: ${diastolic}\nOxygen Level: ${oxygenLevel}`);
+    showScreen('risk-analysis-screen');
+  });
+=======
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, onValue, set } from "firebase/database";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCS2Wfxstx98G7UAiU4dFUMGuZxj8E8G3c",
+  authDomain: "ai-health-screening.firebaseapp.com",
+  databaseURL: "https://ai-health-screening-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ai-health-screening",
+  storageBucket: "ai-health-screening.firebasestorage.app",
+  messagingSenderId: "686247358596",
+  appId: "1:686247358596:web:9685949a544c2bc80912d1"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Simple user registration and login using localStorage
+  const registeredUsersKey = 'registeredUsers';
+  let registeredUsers = JSON.parse(localStorage.getItem(registeredUsersKey) || '{}');
+
+  function saveUsers() {
+    localStorage.setItem(registeredUsersKey, JSON.stringify(registeredUsers));
+  }
+
+  function isUserRegistered(mobile) {
+    return registeredUsers.hasOwnProperty(mobile);
+  }
+
+  function registerUser(mobile) {
+    registeredUsers[mobile] = { mobile };
+    saveUsers();
+  }
+
+  // Screen navigation
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(screen => {
+      screen.classList.remove('active');
+    });
+    const target = document.getElementById(id);
+    if (target) {
+      target.classList.add('active');
+    }
+  }
+
+  // Button event handlers
+
+  // Login screen buttons
+  document.getElementById('send-otp-btn')?.addEventListener('click', () => {
+    const mobile = document.getElementById('mobile-number').value.trim();
+    if (!mobile) {
+      alert('Please enter a mobile number.');
+      return;
+    }
+    if (isUserRegistered(mobile)) {
+      alert('OTP sent to ' + mobile);
+      showScreen('dashboard-screen');
+    } else {
+      alert('Mobile number not registered. Please sign up.');
+    }
+  });
+
+  document.getElementById('scan-rfid-btn')?.addEventListener('click', () => {
+    alert('Simulating RFID scan...');
+    const demoMobile = '1234567890';
+    if (!isUserRegistered(demoMobile)) {
+      registerUser(demoMobile);
+      alert('RFID user registered with mobile ' + demoMobile);
+    }
+    alert('RFID scan successful. Logging in user with mobile ' + demoMobile);
+    showScreen('dashboard-screen');
+  });
+
+  document.getElementById('sign-up-btn')?.addEventListener('click', () => {
+    const mobile = document.getElementById('mobile-number').value.trim();
+    if (!mobile) {
+      alert('Please enter a mobile number to sign up.');
+      return;
+    }
+    if (isUserRegistered(mobile)) {
+      alert('Mobile number already registered. Please login.');
+    } else {
+      registerUser(mobile);
+      alert('Registration successful! Redirecting...');
+      showScreen('dashboard-screen');
+    }
+  });
+
+  // Dashboard buttons
+  document.getElementById('logout-btn')?.addEventListener('click', () => {
+    showScreen('login-screen');
+  });
+
+  document.getElementById('start-health-check-btn')?.addEventListener('click', () => {
+    showScreen('vitals-entry-screen');
+  });
+
+  document.getElementById('view-reports-btn')?.addEventListener('click', () => {
+    showScreen('report-screen');
+  });
+
+  document.getElementById('call-doctor-btn')?.addEventListener('click', () => {
+    showScreen('doctor-consultation-screen');
+  });
+
+  document.getElementById('feedback-btn')?.addEventListener('click', () => {
+    showScreen('feedback-screen');
+  });
+
+  // Vitals entry form submission - save to Firebase
+  const vitalsForm = document.getElementById('vitals-form');
+  vitalsForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const temperature = document.getElementById('temperature')?.value;
+    const pulse = document.getElementById('pulse')?.value;
+    const systolic = document.getElementById('systolic')?.value;
+    const diastolic = document.getElementById('diastolic')?.value;
+    const oxygenLevel = document.getElementById('oxygen-level')?.value;
+
+    // Save vitals to Firebase
+    set(ref(database, 'vitals'), {
+      temperature: temperature,
+      pulse: pulse,
+      systolic: systolic,
+      diastolic: diastolic,
+      oxygenLevel: oxygenLevel
+    }).then(() => {
+      alert('Vitals submitted and saved.');
+      showScreen('risk-analysis-screen');
+    }).catch((error) => {
+      alert('Error saving vitals: ' + error.message);
+    });
+  });

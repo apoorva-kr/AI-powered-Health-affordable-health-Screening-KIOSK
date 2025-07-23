@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Healthcare Kiosk</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<a href="#main-content" class="skip-link" style="position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to main content</a>
+<header role="banner">
+  <h1>AI Healthcare Kiosk</h1>
+</header>
+<main id="main-content" role="main" tabindex="-1">
+  <!-- Login/Sign-Up Screen -->
+  <section id="login-screen" class="screen active">
+    <h2>Login or Sign-Up</h2>
+    <p>Scan your RFID card or enter your mobile number to receive an OTP.</p>
+    <input type="text" id="mobile-number" placeholder="Enter mobile number" data-i18n-placeholder="Enter mobile number" />
+    <button id="send-otp-btn" data-i18n="Send OTP" data-i18n-value="Send OTP">Send OTP</button>
+    <button id="scan-rfid-btn" data-i18n="Scan RFID">Scan RFID</button>
+    <button id="admin-login-btn" style="margin-left: 10px; display: none;">Admin Login</button>
+    <p>New user? <button id="sign-up-btn" data-i18n="Sign Up">Sign Up</button></p>
+    <button id="sos-btn" style="background-color: red; color: white; font-weight: bold; position: fixed; top: 10px; left: 10px; z-index: 1000;">SOS</button>
+  </section>
+
+  <section id="dashboard-screen" class="screen">
+    <h2>Dashboard</h2>
+    <div id="firebase-data-display" class="dashboard-cards">
+      <div class="card">
+        <h3>Temperature</h3>
+        <p><span id="temp-display">--</span> °C</p>
+      </div>
+      <div class="card">
+        <h3>SPO2</h3>
+        <p><span id="spo2-display">--</span> %</p>
+      </div>
+    </div>
+
+    <div class="dashboard-buttons">
+      <button id="start-health-check-btn" class="primary-btn">Start Health Check</button>
+      <button id="view-reports-btn" class="primary-btn">View Reports</button>
+      <button id="call-doctor-btn" class="primary-btn">Call Doctor</button>
+      <button id="feedback-btn" class="primary-btn">Feedback</button>
+      <button id="logout-btn" class="secondary-btn">Logout</button>
+      <button id="test-mode-btn" style="display:none;">Test Mode</button>
+    </div>
+  </section>
+
+  <!-- Vitals Entry Screen -->
+  <section id="vitals-entry-screen" class="screen">
+    <h2>Vitals Entry</h2>
+    <form id="vitals-form" class="vitals-form">
+      <div class="form-group">
+        <label for="temperature">Temperature (°C):</label>
+        <input type="number" step="0.1" id="temperature" required />
+      </div>
+      <div class="form-group">
+        <label for="pulse">Pulse (bpm):</label>
+        <input type="number" id="pulse" required />
+      </div>
+      <div class="form-group">
+        <label for="systolic">Systolic (mmHg):</label>
+        <input type="number" id="systolic" required />
+      </div>
+      <div class="form-group">
+        <label for="diastolic">Diastolic (mmHg):</label>
+        <input type="number" id="diastolic" required />
+      </div>
+      <div class="form-group">
+        <label for="oxygen-level">Oxygen Level (%):</label>
+        <input type="number" id="oxygen-level" required />
+      </div>
+      <button type="submit" class="primary-btn">Submit Vitals</button>
+    </form>
+  </section>
+
+  <!-- Risk Analysis Screen -->
+  <section id="risk-analysis-screen" class="screen">
+    <h2>Risk Analysis</h2>
+    <p id="risk-result">Analyzing...</p>
+    <button id="view-chart-btn">View Chart</button>
+  </section>
+
+  <!-- Chart View Screen -->
+  <section id="chart-view-screen" class="screen">
+    <h2>Health Trends</h2>
+    <canvas id="health-chart" width="400" height="200"></canvas>
+    <button id="proceed-doctor-consult-btn">Proceed to Doctor Consultation</button>
+  </section>
+
+  <!-- Doctor Consultation Screen -->
+  <section id="doctor-consultation-screen" class="screen">
+    <h2>Doctor Consultation</h2>
+    <div id="video-call-container" style="width: 100%; height: 400px; background: #000; display: none;"></div>
+    <button id="start-video-call-btn">Start Video Call</button>
+    <button id="end-video-call-btn" style="display:none;">End Video Call</button>
+    <button id="skip-call-btn">Skip Call</button>
+  </section>
+
+  <!-- Report Screen -->
+  <section id="report-screen" class="screen">
+    <h2>Health Report</h2>
+    <p>PDF report placeholder</p>
+    <button id="download-report-btn">Download Report</button>
+    <button id="proceed-feedback-btn">Proceed to Feedback</button>
+  </section>
+
+  <!-- Feedback Screen -->
+  <section id="feedback-screen" class="screen">
+    <h2>Feedback</h2>
+    <label>Rate your experience:
+      <select id="rating">
+        <option value="5">5 - Excellent</option>
+        <option value="4">4 - Good</option>
+        <option value="3">3 - Average</option>
+        <option value="2">2 - Poor</option>
+        <option value="1">1 - Very Poor</option>
+      </select>
+    </label><br/>
+    <label>Comments:<br/>
+      <textarea id="comments" rows="4" cols="50"></textarea>
+    </label><br/>
+    <button id="submit-feedback-btn">Submit Feedback</button>
+  </section>
+
+  <!-- Admin Login Screen -->
+  <section id="admin-login-screen" class="screen">
+    <h2>Admin Login</h2>
+    <label>Username: <input type="text" id="admin-username" /></label><br/>
+    <label>Password: <input type="password" id="admin-password" /></label><br/>
+    <button id="admin-login-btn">Login</button>
+    <button id="admin-login-back-btn">Back</button>
+    <p id="admin-login-error" style="color: red; display: none;">Invalid credentials</p>
+  </section>
+
+  <!-- Admin Dashboard Screen -->
+  <section id="admin-dashboard-screen" class="screen">
+    <h2>Admin Dashboard</h2>
+    <div class="admin-dashboard-cards">
+      <div class="card">
+        <h3>Total Users</h3>
+        <p><span id="total-users">0</span></p>
+      </div>
+      <div class="card">
+        <h3>Flagged High-Risk Cases</h3>
+        <p><span id="high-risk-cases">0</span></p>
+      </div>
+      <div class="card">
+        <h3>System Health</h3>
+        <p><span id="system-health">All systems operational</span></p>
+      </div>
+    </div>
+    <div class="admin-dashboard-buttons">
+      <button id="export-reports-btn" class="primary-btn">Export Reports as CSV</button>
+      <button id="admin-logout-btn" class="secondary-btn">Logout</button>
+    </div>
+  </section>
+
+  <!-- Device Integration Screen -->
+  <section id="device-integration-screen" class="screen">
+    <h2>Device Integration</h2>
+    <p>Simulated device connection status: <span id="device-status">Disconnected</span></p>
+    <button id="connect-device-btn">Connect Device</button>
+    <button id="disconnect-device-btn">Disconnect Device</button>
+    <button id="back-to-dashboard-btn">Back to Dashboard</button>
+  </section>
+</main>
+
+<footer role="contentinfo">
+  <div id="accessibility-controls" role="region" aria-label="Accessibility Controls" tabindex="0" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+    <button id="font-decrease" class="font-size-btn" aria-label="Decrease font size">A-</button>
+    <button id="font-normal" class="font-size-btn" aria-label="Normal font size">A</button>
+    <button id="font-increase" class="font-size-btn" aria-label="Increase font size">A+</button>
+    <button id="toggle-voice-assist" aria-pressed="false" aria-label="Toggle voice assist">Enable Voice Assist</button>
+    <button id="toggle-dark-mode" aria-pressed="false" aria-label="Toggle dark mode">Toggle Dark Mode</button>
+    <label for="language-select" style="margin-left: 10px; margin-right: 5px;">Language:</label>
+    <select id="language-select" aria-label="Select Language">
+      <option value="en" selected>English</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="zh">中文</option>
+      <option value="kn">ಕನ್ನಡ</option>
+      <option value="hi">हिन्दी</option>
+    </select>
+  </div>
+  </div>
+  <div id="chatbot-container" aria-label="Chatbot" role="region" style="margin-top: 10px;">
+    <button id="chatbot-toggle" aria-label="Open chat" aria-expanded="false">💬</button>
+    <div id="chatbot-window" hidden style="display:none;">
+      <div id="chatbot-messages" aria-live="polite" aria-atomic="true" role="log" aria-relevant="additions"></div>
+      <input type="text" id="chatbot-input" aria-label="Type your message" placeholder="Type your message..." />
+      <button id="chatbot-send" aria-label="Send message">Send</button>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="script.js" type="module"></script>
+</body>
+</html>
